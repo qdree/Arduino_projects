@@ -1,13 +1,18 @@
-const int SCLK = 8;  
-const int RCLK = 9;     
-const int DIO = 10;   
+#define V 10 // V - for symbol
+#define OFF 11
+
+const int SCLK = 10;  
+const int RCLK = 11;     
+const int DIO = 12;   
 const int switches[6] = { 2, 3, 4, 5, 6, 7 };
-const int rele = 11;
+const int croc_1 = 14;
+const int croc_2 = 15;
+const int rele = 16;
 
 const int SUCCESSFUL_RESULT = 440;
 const int switches_cnt = 6;
 
-const byte digit[11] = {	0b11000000, // 0
+const byte digit[12] = {	0b11000000, // 0
 													0b11111001, // 1
 													0b10100100, // 2
 													0b10110000, // 3
@@ -17,7 +22,8 @@ const byte digit[11] = {	0b11000000, // 0
 													0b11111000, // 7
 													0b10000000, // 8
 													0b10010000, // 9
-													0b11100011	// v
+													0b11100011,	// v
+													0b11111111	// all segments are turned off
 										  	};
 
 const byte chr[4] = {	0b00001000,  
@@ -36,13 +42,21 @@ void setup()
 	for(int pins = 0; pins < switches_cnt; pins++)
 		pinMode(switches[pins], INPUT_PULLUP);
 	pinMode(rele, OUTPUT);
+	pinMode(croc_1, INPUT_PULLUP);
+	pinMode(croc_2, INPUT_PULLUP);
+
+	digitalWrite(rele, HIGH);	
 	Serial.begin(9600);
 }
 
 void loop()
 {
-	display(calculation());
-	check_result(calculation());
+	if(digitalRead(croc_1) == LOW && digitalRead(croc_2) == LOW)
+	{
+		display(calculation());
+		check_result(calculation());
+	}
+	else display_mode(digit[OFF]);
 }
 
 void check_result(int res)
@@ -70,35 +84,37 @@ int calculation()
 	    		result += 50;
 	    		break;
 	    	case 2:
-	    		result += 5;
+	    		result += 35;
 	    		break;
 	    	case 3:
 	    		result += 80;
 	    		break;
 	    	case 4:
-	    		result += 180;
+	    		result += 220;
 	    		break;
 	    	case 5:
 	    		result += 130;
 	    		break;
 	    }
+	    //Serial.println(result);
 		}
 	}
 return result;	
 }
 
-void display(int number)
+void display(int number) //output off numbers on 7-segment display
 {
 	int index;
+	Serial.println(number);
 	if(number <= 0)
 	{
-		clear_display();
+		display_mode(digit[0]);
 	}
 	else
 	{
 		digitalWrite(RCLK, LOW); // open latch
-  	shiftOut(DIO, SCLK, MSBFIRST, digit[10]);  // send byte with a number
-  	shiftOut(DIO, SCLK, MSBFIRST, chr[3]);   // turn on the digit
+  	shiftOut(DIO, SCLK, MSBFIRST, digit[V]);  // send byte with symbol V
+  	shiftOut(DIO, SCLK, MSBFIRST, chr[3]);   // turn on the 3rd digit
   	digitalWrite(RCLK, HIGH); // close the latch
 		for(int i = 2; i >= 0; i--)
 		{
@@ -109,40 +125,26 @@ void display(int number)
     	shiftOut(DIO, SCLK, MSBFIRST, chr[i]);   // turn on the digit
     	digitalWrite(RCLK, HIGH); // close the latch
 		}
-		Serial.println(number);
+		
 	}
 }
 
-void clear_display()
+void display_mode(int pattern) //output of character chosen as 'pattern var'
 {
   for(byte i = 0; i <= 3; i++)
   { 
     digitalWrite(RCLK, LOW); // open latch
-    shiftOut(DIO, SCLK, MSBFIRST, 0b11111111);  // send byte with a number
+    shiftOut(DIO, SCLK, MSBFIRST, pattern);  // send byte with a element 
     shiftOut(DIO, SCLK, MSBFIRST, chr[i]);   // turn on the digit
     digitalWrite(RCLK, HIGH); // close the latch
   }  
 }
 
-
 void win(int res)
 {
-	//digitalWrite(rele, LOW);	
+	digitalWrite(rele, LOW);	
 	while(true)
 	{
-			display(res);
+		display(res);
 	}
-	//digitalWrite(rele, HIGH);	
 }
-
-
-// void show_correct()
-// {
-//   for(byte i = 0; i <= 3; i++)
-//   { 
-//     digitalWrite(RCLK, LOW); // open latch
-//     shiftOut(DIO, SCLK, MSBFIRST, digit[correct_combo[i]]);  // send byte with a number
-//     shiftOut(DIO, SCLK, MSBFIRST, chr[i]);   // turn on the digit
-//     digitalWrite(RCLK, HIGH); // close the latch
-//   }  
-// }
