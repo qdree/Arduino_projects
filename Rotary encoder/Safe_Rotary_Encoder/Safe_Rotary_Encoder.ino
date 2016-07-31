@@ -2,10 +2,10 @@
 
 #include <RotaryEncoder.h>
 #define passlen 4
-#define bzz 4
+#define bzz 7
 #define rele 6
 
-RotaryEncoder encoder(A2, A3);
+RotaryEncoder encoder(4, 5);
 
 const int pass[passlen] = { -6, 8, -9, 1};
 uint8_t n_digits = 0;
@@ -16,7 +16,7 @@ void setup()
   pinMode(bzz, OUTPUT);
   pinMode(rele, OUTPUT);
   digitalWrite(rele, HIGH);
-  digitalWrite(bzz, HIGH);
+  digitalWrite(bzz, LOW);
 
   Serial.begin(9600);
   Serial.println("QuestSystems.com.ua Rotary Safe");
@@ -65,9 +65,9 @@ void rotor()
 void beep()
 {
   //tone(bzz,90,10);
-  digitalWrite(bzz, LOW);
-  delay(100);
   digitalWrite(bzz, HIGH);
+  delay(100);
+  digitalWrite(bzz, LOW);
 
 }
 
