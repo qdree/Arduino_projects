@@ -37,9 +37,8 @@ void rotation_check()
   if(newPos_glass > 23 || newPos_glass < -23) encoder_glass.setPosition(0);
   if(newPos_plate > 23 || newPos_plate < -23) encoder_plate.setPosition(0);
 
-  if(pos_glass != newPos_glass /*&& !glass_correct*/)
+  if(pos_glass != newPos_glass)
   {
-    //if(newPos_glass > glass_correct_pos) glass_correct = false;
     if(newPos_glass == glass_correct_pos) glass_correct = true;
     else glass_correct = false;
 
@@ -49,7 +48,7 @@ void rotation_check()
 
     pos_glass = newPos_glass;
   }
-  else if(pos_plate != newPos_plate /*&& !plate_correct*/)
+  else if(pos_plate != newPos_plate)
   {
     if(newPos_plate == plate_correct_pos) plate_correct = true;
     else plate_correct = false;
