@@ -1,3 +1,4 @@
+#include <EEPROM.h>
 #include <RotaryEncoder.h>
 
 const int rele = 7;
@@ -10,6 +11,14 @@ const int plate_correct_pos = 8;
 
 bool plate_correct = false;
 bool glass_correct = false;
+bool both_correct = false;
+
+int gp_start;
+int pp_start;
+
+unsigned long startTimestamp;
+unsigned long timestamp;
+const unsigned long timer_length = 2000; //2 seconds
 
 void setup()
 {
@@ -17,6 +26,10 @@ void setup()
   digitalWrite(rele, LOW);
 
   Serial.begin(9600);
+  gp_start = EEPROM.read(0);
+  pp_start = EEPROM.read(1);
+  encoder_glass.setPosition(gp_start);
+  encoder_plate.setPosition(pp_start);
 }
 
 void loop()
@@ -47,6 +60,7 @@ void rotation_check()
     Serial.println();
 
     pos_glass = newPos_glass;
+    EEPROM.write(0, pos_glass);
   }
   else if(pos_plate != newPos_plate)
   {
@@ -58,15 +72,29 @@ void rotation_check()
     Serial.println();
 
     pos_plate = newPos_plate;
+    EEPROM.write(1, pos_plate);
   }
-  if(plate_correct && glass_correct) win(); 
+
+  if(plate_correct && glass_correct)
+  {
+    win();
+    // both_correct = true;
+    // //Serial.println("Correct");
+    // startTimestamp = millis();
+    // timestamp = startTimestamp;
+    // while((timestamp - startTimestamp) < timer_length)
+    // {
+    //   timestamp = millis();
+    //   if((timestamp == timer_length) && both_correct) win();
+    // }
+  }
 }
 
 void win()
 {
   Serial.println("Correct!");
   digitalWrite(rele, HIGH);
-  while(true);
-  delay(5000);
-  digitalWrite(rele, HIGH);
+  //while(true);
+  //delay(5000);
+  //digitalWrite(rele, HIGH);
 }
