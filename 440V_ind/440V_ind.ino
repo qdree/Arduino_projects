@@ -1,6 +1,3 @@
-#define V 10 // V - for symbol
-#define OFF 11
-
 const int SCLK = 10;  
 const int RCLK = 11;     
 const int DIO = 12;   
@@ -11,6 +8,9 @@ const int rele = 16;
 
 const int SUCCESSFUL_RESULT = 440;
 const int switches_cnt = 6;
+
+const int V = 10 // V - for symbol
+const int OFF = 11
 
 const byte digit[12] = {	0b11000000, // 0
 													0b11111001, // 1
@@ -39,8 +39,10 @@ void setup()
   pinMode(RCLK, OUTPUT);
   pinMode(SCLK, OUTPUT);
   pinMode(DIO, OUTPUT);  
+  
 	for(int pins = 0; pins < switches_cnt; pins++)
 		pinMode(switches[pins], INPUT_PULLUP);
+
 	pinMode(rele, OUTPUT);
 	pinMode(croc_1, INPUT_PULLUP);
 	pinMode(croc_2, INPUT_PULLUP);
@@ -56,7 +58,7 @@ void loop()
 		display(calculation());
 		check_result(calculation());
 	}
-	else display_mode(digit[OFF]);
+	else display_mode(OFF);
 }
 
 void check_result(int res)
@@ -108,22 +110,16 @@ void display(int number) //output off numbers on 7-segment display
 	Serial.println(number);
 	if(number <= 0)
 	{
-		display_mode(digit[0]);
+		display_mode(0);
 	}
 	else
 	{
-		digitalWrite(RCLK, LOW); // open latch
-  	shiftOut(DIO, SCLK, MSBFIRST, digit[V]);  // send byte with symbol V
-  	shiftOut(DIO, SCLK, MSBFIRST, chr[3]);   // turn on the 3rd digit
-  	digitalWrite(RCLK, HIGH); // close the latch
+  	send_byte(V, 3);
 		for(int i =2; i >= -1; i--)
 		{
 			index = number % 10;
 			number = number / 10;
-			digitalWrite(RCLK, LOW); // open latch
-    	shiftOut(DIO, SCLK, MSBFIRST, digit[index]);  // send byte with a number
-    	shiftOut(DIO, SCLK, MSBFIRST, chr[i]);   // turn on the digit
-    	digitalWrite(RCLK, HIGH); // close the latch
+    	send_byte(index, i);
 		}
 		
 	}
@@ -133,10 +129,7 @@ void display_mode(int pattern) //output of character chosen as 'pattern var'
 {
   for(byte i = 0; i <= 4; i++)
   { 
-    digitalWrite(RCLK, LOW); // open latch
-    shiftOut(DIO, SCLK, MSBFIRST, pattern);  // send byte with a element 
-    shiftOut(DIO, SCLK, MSBFIRST, chr[i]);   // turn on the digit
-    digitalWrite(RCLK, HIGH); // close the latch
+    send_byte(pattern, i);
   }  
 }
 
@@ -147,4 +140,12 @@ void win(int res)
 	{
 		display(res);
 	}
+}
+
+void send_byte(int number, int character)
+{
+  digitalWrite(RCLK, LOW); // open latch
+  shiftOut(DIO, SCLK, MSBFIRST, digit[number]);  // send byte with a element 
+  shiftOut(DIO, SCLK, MSBFIRST, chr[character]);   // turn on the digit
+  digitalWrite(RCLK, HIGH); // close the latch
 }
