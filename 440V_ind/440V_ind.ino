@@ -116,7 +116,7 @@ void display(int number) //output off numbers on 7-segment display
   	shiftOut(DIO, SCLK, MSBFIRST, digit[V]);  // send byte with symbol V
   	shiftOut(DIO, SCLK, MSBFIRST, chr[3]);   // turn on the 3rd digit
   	digitalWrite(RCLK, HIGH); // close the latch
-		for(int i = 2; i >= 0; i--)
+		for(int i =2; i >= -1; i--)
 		{
 			index = number % 10;
 			number = number / 10;
@@ -131,7 +131,7 @@ void display(int number) //output off numbers on 7-segment display
 
 void display_mode(int pattern) //output of character chosen as 'pattern var'
 {
-  for(byte i = 0; i <= 3; i++)
+  for(byte i = 0; i <= 4; i++)
   { 
     digitalWrite(RCLK, LOW); // open latch
     shiftOut(DIO, SCLK, MSBFIRST, pattern);  // send byte with a element 
