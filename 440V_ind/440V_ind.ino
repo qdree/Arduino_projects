@@ -2,15 +2,14 @@ const int SCLK = 10;
 const int RCLK = 11;     
 const int DIO = 12;   
 const int switches[6] = { 2, 3, 4, 5, 6, 7 };
-const int croc_1 = 14;
 const int croc_2 = 15;
 const int rele = 16;
 
 const int SUCCESSFUL_RESULT = 440;
 const int switches_cnt = 6;
 
-const int V = 10 // V - for symbol
-const int OFF = 11
+const int V = 10; // V - for symbol
+const int OFF = 11;
 
 const byte digit[12] = {	0b11000000, // 0
 													0b11111001, // 1
@@ -44,7 +43,6 @@ void setup()
 		pinMode(switches[pins], INPUT_PULLUP);
 
 	pinMode(rele, OUTPUT);
-	pinMode(croc_1, INPUT_PULLUP);
 	pinMode(croc_2, INPUT_PULLUP);
 
 	digitalWrite(rele, HIGH);	
@@ -53,7 +51,7 @@ void setup()
 
 void loop()
 {
-	if(digitalRead(croc_1) == LOW && digitalRead(croc_2) == LOW)
+	if(digitalRead(croc_2) == LOW)
 	{
 		display(calculation());
 		check_result(calculation());
