@@ -1,26 +1,26 @@
 // #include <EEPROM.h>
 // #include <RotaryEncoder.h>
 
-const int rele = 7;
-const int glass_hall = 5;
-const int plate_hall = 3;
-// RotaryEncoder encoder_glass(3, 2);
-// RotaryEncoder encoder_plate(4, 5);
+// const int hall_cnt = 2;
 
-uint8_t n_digits = 0;
-// const int glass_correct_pos = 14;
-// const int plate_correct_pos = 8;
+const int rele = 7;
+const int glass_hall = 2;
+const int plate_hall = 3;
+const int led = 13;
+
+// const int hall_sensors[hall_cnt] = {2,3};
+// int hall_state[hall_cnt] = {HIGH, HIGH};
+// int oldhall_state[hall_cnt] = {HIGH, HIGH};
+// int catches_cnt = 0;
 
 bool plate_correct = false;
 bool glass_correct = false;
 bool both_correct = false;
 
-// int gp_start;
-// int pp_start;
-
-// unsigned long startTimestamp;
-// unsigned long timestamp;
-// const unsigned long timer_length = 2000; //2 seconds
+unsigned long startTimestamp;
+unsigned long timestamp;
+unsigned long difference;
+const unsigned long timer_length = 2000; //2 seconds
 
 int glass_timer = 0;
 int plate_timer = 0;
@@ -28,44 +28,69 @@ int plate_timer = 0;
 void setup()
 {
   pinMode(rele, OUTPUT);
+  pinMode(led, OUTPUT);
   digitalWrite(rele, LOW);
 
-  attachInterrupt(glass_hall, glass_interrupt, FALLING);
-  attachInterrupt(plate_hall, plate_interrupt, FALLING);
+  // attachInterrupt(digitalPinToInterrupt(glass_hall), glass_interrupt, FALLING);
+  // attachInterrupt(plate_hall, plate_interrupt, FALLING);
 
   Serial.begin(9600);
 
   pinMode(plate_hall, INPUT);
   pinMode(glass_hall, INPUT);
-
-  //read position of encoders from EEPROM memory and set it as current after system is restarted
-  // gp_start = EEPROM.read(0);
-  // pp_start = EEPROM.read(1);
-  // encoder_glass.setPosition(gp_start);
-  // encoder_plate.setPosition(pp_start);
 }
 
 void loop()
 {
   rotation_check();
+  //pos_check();
 }
+
+// void pos_check()
+// {
+//   static int oldplate_state = 0;
+//   static int oldglass_state = 0;
+
+//   int glass_state = digitalRead(glass_hall);
+//   int plate_state = digitalRead(plate_hall);
+
+//   if(oldglass_state != glass_state /*&& oldplate_state != plate_state*/)
+//   {
+// 		if(glass_correct /*&& plate_correct*/)
+// 		{
+// 			both_correct= true;
+
+// 			if(glass_timer >= 0 /*&& plate_timer >= 0*/)
+// 			{
+// 				glass_timer--;
+// 				// plate_timer--;
+
+
+// 		    // Serial.print("Plate timer:");
+// 	    	// Serial.print(plate_timer);
+// 	    	// Serial.println();
+// 			}
+// 		}
+// 		Serial.print("Glass state:");
+// 		Serial.println(glass_state);
+
+// 		// Serial.print("Plate state:");
+// 		// Serial.print(plate_state);
+// 		// Serial.println();
+
+// 		oldglass_state = glass_state;
+//     // oldplate_state = plate_state;
+// 	}
+//   Serial.print("Glass timer:");
+// 	Serial.print(glass_timer);
+// 	Serial.println();
+// 	if(both_correct && glass_timer == 0 /*&& plate_timer == 0*/) win();
+// }
 
 void rotation_check()
 {
   static int oldplate_state = 0;
   static int oldglass_state = 0;
-
-  //neccessary function to work with encoders
-  // encoder_glass.tick();
-  // encoder_plate.tick();
-
-  //read positions of each encoder
-  // int newPos_glass = encoder_glass.getPosition(); 
-  // int newPos_plate = encoder_plate.getPosition();
-
-  // //reset encoders state if they did full circle
-  // if(newPos_glass > 23 || newPos_glass < -23) encoder_glass.setPosition(0);
-  // if(newPos_plate > 23 || newPos_plate < -23) encoder_plate.setPosition(0);
 
   int glass_state = digitalRead(glass_hall);
   int plate_state = digitalRead(plate_hall);
@@ -74,94 +99,143 @@ void rotation_check()
   if(oldglass_state != glass_state) //check if position of first encoder changed from previous
   {
     if(glass_state == LOW) glass_correct = true; //if first encoder is in correct position
-    else glass_correct = false;
+    else reset();
 
     Serial.print("Glass pos:");
     Serial.print(glass_state);
     Serial.println();
 
 		oldglass_state = glass_state;
-    // EEPROM.write(0, pos_glass); //save 1st encoder's position state to EEPROM memory
   }
   else if(oldplate_state != plate_state)  //check if position of second encoder changed from previous
   {
     if(plate_state == LOW) plate_correct = true; //if second encoder is in correct position
-    else plate_correct = false;
+    else reset();
 
     Serial.print("Plate pos:");
     Serial.print(plate_state);
     Serial.println();
 
     oldplate_state = plate_state;
-    // EEPROM.write(1, pos_plate); //save 2nd encoder's position state to EEPROM memory
   }
 
-  // startTimestamp = millis();
+ 	if(plate_correct && glass_correct) 
+	{
+  	both_correct = true;
+		startTimestamp = millis();
+		timestamp = startTimestamp;
 
-  // if(/*plate_correct &&*/ glass_correct) 
-  // {
-  // 	both_correct = true;
-
-  // 	// Serial.print("Plate timer: ");
-  // 	// Serial.println(plate_timer);
-  	if(glass_timer > 0/* && plate_timer > 0*/)
+	  while(difference < timer_length/* && both_correct*/)
   	{
-  		glass_timer--;
-	  	Serial.print("Glass timer: ");
-  		Serial.println(glass_timer);
-  		//plate_timer--;
-  		/*if(glass_timer == 0 /*&& plate_timer == 0) && both_correct)*/ win();
-  	}
-  	else reset();
-  	// }
-  // }
+			difference = timestamp - startTimestamp;
 
-  // if(plate_correct && glass_correct) //both encoders are in correct position
-  // {
-  //   both_correct = true;
-  //   timestamp = startTimestamp;
+      timestamp = millis();
+			Serial.print("Difference: ");
+			Serial.println(difference);
 
-  //   while ( (timestamp - startTimestamp) < timer_length)
-  //   {
-  //       timestamp = millis();
-  //       // Serial.print("Timestamp: ");
-  //       // Serial.println(timestamp);
+      if(difference >= timer_length)
+      {
+      	if((digitalRead(glass_hall) == LOW) && (digitalRead(plate_hall) == LOW))
+      	//if(both_correct)
+      	{
+	      	// Serial.println("more");
+      		win();
+      		reset();
+      	}
+      	else 
+      	{
+      		reset();
+      		return;
+      	}
+      }
+		}
+	}
 
-  //       // Serial.print("Start timestamp: ");
-  //       // Serial.println(startTimestamp);
+	// if(oldhall_state != hall_state)
+	// {
+	// 	for(int i = 0; i < hall_cnt; i++)
+	// 	{
+	// 		hall_state[i] = digitalRead(hall_sensors[i]);
+	//    	//Iterate by each sensor 													 
+	// 		for(int j = 0; j < hall_cnt; j++)
+	// 		{
+	// 			if(hall_state[j] == LOW)
+	// 			{
+	// 				catches_cnt++;
+	// 				oldhall_state[j] = hall_state[j];
+	// 			}
+	// 			//if one sensor from array is inactive - reset
+	// 			else
+	// 			{
+	// 				reset();
+	// 				catches_cnt = 0;
+	// 				break;
+	// 			}
+	// 		}
 
-  //       // Serial.print("Difference: ");
-  //       // Serial.println(timestamp - startTimestamp);
-  //       if(((timestamp - startTimestamp) >= timer_length) && both_correct) win();
-  //       else reset();
+	// 		if(hall_state[i] == LOW) 
+	// 		{
+	// 			Serial.print("Sensor:");
+	// 			Serial.println(i);
+	// 		}
 
-  //   }
-  // }
+	// 		//all sensors active
+	// 		if(catches_cnt == hall_cnt) 
+	// 		{
+	// 			startTimestamp = millis();
+	// 			timestamp = startTimestamp;
+
+	// 		  while(difference < timer_length)
+	// 			{
+	// 				difference = timestamp - startTimestamp;
+
+	// 	      timestamp = millis();
+	// 				Serial.print("Difference: ");
+	// 				Serial.println(difference);
+
+	// 	      if(difference >= timer_length)
+	// 	      {
+	// 	      	if(catches_cnt = hall_cnt)
+	// 	      	{
+	// 	      		win();
+	// 	      	}
+	// 	      	else reset();
+	// 	      }
+	// 			}
+	// 		}
+	// 		else reset();	 
+	// 	}
+	// }
+
 }
 
-void glass_interrupt()
-{
-	if(both_correct)
-		glass_timer += 2;
-}
 
-void plate_interrupt()
-{
-	if(both_correct)
-		plate_timer += 2;
-}
+// void glass_interrupt()
+// {
+// 	glass_correct = true;
+// 	glass_timer = 5;
+// }
+
+// void plate_interrupt()
+// {
+// 	plate_correct = true;
+// 	plate_timer = 2;
+// }
 
 void win()
 {
   Serial.println("Correct!");
   digitalWrite(rele, HIGH);
-  // while(true);
-  //delay(5000);
-  //digitalWrite(rele, HIGH);
+  digitalWrite(led, HIGH);
+  while(true);
+  delay(2000);
+  digitalWrite(led, LOW);
 }
 
 void reset()
 {
+	difference = 0;
+	// catches_cnt = 0;
   both_correct = false;
   glass_correct = false;
   plate_correct = false;
