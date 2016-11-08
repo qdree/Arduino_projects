@@ -4,11 +4,8 @@
  
 // CE, CSN pins
 RF24 radio(7, 8);
-int msg[1];
-String theMessage = "";
-int lastmsg = 1;
 
-const uint64_t pipes[2] = {0xF0F0F0F0E1LL, 0xABCDABCD71LL};
+const uint64_t pipes[2] = {0xABCDABCD71LL, 0xF0F0F0F0E1LL};
 
 void setup()
 {
@@ -26,52 +23,33 @@ void setup()
     radio.enableDynamicPayloads();
     radio.enableAckPayload();
 
-    radio.openWritingPipe(pipes[0]);
-    radio.openReadingPipe(1, pipes[1]);
+    radio.openWritingPipe(pipes[1]);
+    radio.openReadingPipe(1, pipes[0]);
     radio.printDetails(); 
     radio.startListening();
 }
 
-// void loop()
-// {
-//     byte ackPL[] = {1};
-//     while(!radio.available(0))
-//         delay(10);
-
-//     int recv_message[32]; 
-//     radio.read(&recv_message, radio.getDynamicPayloadSize());
-//     printf("Received: %d\n");
-//     printf("Translating the received message...\n");
-//     char *string;    
-//     for(int n = 0; n < sizeof(recv_message); n++)
-//     {
-//         //Decode into standart unicode set
-//         if (n >= 32 && n <= 126)
-//             string += (n - 32);
-//     }
-//     Serial.println(string);
-//     radio.writeAckPayload(1, ackPL, sizeof(ackPL));
-//     printf("Loaded payload reply of %d",ackPL);
-// }
-
-void loop(void)
+void loop()
 {
-    byte ackPL[] = {2,1};
-	if (radio.available())
-	{
-		radio.read(msg, 1);
-		char theChar = msg[0];
-		if (msg[0] != 2)
-		{
-			theMessage.concat(theChar);
-		}
-		else
-      	{
-       		Serial.println(theMessage);
-       		theMessage= ""; 
-   		    radio.writeAckPayload(1, &ackPL, sizeof(ackPL));
-			printf("Loaded payload reply of %d, %d\n",ackPL[0], ackPL[1]);
-      	}
-
-   	}
+  byte ackPL[] = {1};
+  if(radio.available())
+  {
+    // char recv_message[32]; 
+    byte recv_message[radio.getDynamicPayloadSize()]; 
+    radio.read(&recv_message, radio.getDynamicPayloadSize());
+    printf("Received: ");
+    for (int i = 0; i < sizeof(recv_message); i++)
+      printf("%d,",recv_message[i]);
+    printf("\nTranslating the received message...\n");
+    char string[radio.getDynamicPayloadSize()];    
+    for(int n = 0; n < sizeof(recv_message); n++)
+    {
+        // //Decode into standart unicode set
+        if (n >= 32 && n <= 126)
+            string[n] += recv_message[n]; 
+    }
+    printf("%s\n",string);
+    radio.writeAckPayload(1, ackPL, sizeof(ackPL));
+    printf("Loaded payload reply of %d\n",ackPL[0]);
+  }
 }
